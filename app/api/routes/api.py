@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from api.routes import predictor
+from api.routes import redaction
 
 router = APIRouter()
-router.include_router(predictor.router, tags=["predictor"], prefix="/v1")
+router.include_router(redaction.router, tags=["redaction"], prefix="/v1")
