@@ -21,7 +21,7 @@ RUN python -m spacy download en_core_web_lg
 ARG DEV=false
 RUN if [ "$DEV" = "true" ] ; then uv pip install -e .[dev] ; fi
 
-ENV PYTHONPATH="${PYTHONPATH}:/app"
+ENV PYTHONPATH="${PYTHONPATH}:/code/app"
 
 EXPOSE 8080
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
