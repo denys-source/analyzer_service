@@ -12,6 +12,7 @@ VERSION = "0.1.0"
 DEBUG: bool = config("DEBUG", cast=bool, default=False)
 
 PROJECT_NAME: str = config("PROJECT_NAME", default="analyzer_service")
+ANTHROPIC_API_KEY: str = config("ANTHROPIC_API_KEY", default="")
 
 LOGGING_LEVEL = logging.DEBUG if DEBUG else logging.INFO
 logging.basicConfig(

@@ -7,13 +7,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-origins = [
-    "http://localhost:8080",
-    "https://chatgpt.com",
-    "https://chat.openai.com",
-]
-
-
 class PrivateNetworkAccessMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.method == "OPTIONS" and "access-control-request-private-network" in request.headers:
@@ -39,7 +32,7 @@ def get_application() -> FastAPI:
     app = FastAPI(title=PROJECT_NAME, debug=DEBUG, version=VERSION, lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
+        allow_origins=["*"],
         allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
