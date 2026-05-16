@@ -1,132 +1,104 @@
 # analyzer_service
 
-A service that exposes API for the PII redaction and website contents analysis
+FastAPI service for PII redaction, website scam analysis, and QR code URL analysis.
 
-## Development Requirements
+## APIs
 
-- Python 3.11+
-- Uv (Python Package Manager)
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/v1/redact` | Redact PII from text (Microsoft Presidio) |
+| `POST` | `/api/v1/analyze` | Analyze website text for scam/phishing |
+| `POST` | `/api/v1/analyze-qr` | Analyze URL from QR code for phishing indicators |
 
-### M.L Model Environment
+### POST /api/v1/redact
 
-```sh
-MODEL_PATH=./ml/model/
-MODEL_NAME=model.pkl
+```json
+// Request
+{ "text": "My name is John Doe and my email is john@example.com" }
+
+// Response
+{ "redacted_text": "My name is <PERSON> and my email is <EMAIL_ADDRESS>" }
 ```
 
-### Update `/predict`
+### POST /api/v1/analyze
 
-To update your machine learning model, add your `load` and `method` [change here](app/api/routes/predictor.py#L19) at `predictor.py`
+```json
+// Request
+{ "text": "<webpage text to analyze>" }
 
-## Installation
-
-```sh
-python -m venv venv
-source venv/bin/activate
-make install
+// Response
+{
+  "risk": "HIGH",
+  "score": 85,
+  "reason": "Page impersonates a bank login form.",
+  "actions": ["Do not enter credentials", "Report to your bank"]
+}
 ```
 
-## Runnning Localhost
+Risk levels: `LOW` | `MEDIUM` | `HIGH` | `CRITICAL` | `UNKNOWN`
 
-`make run`
+### POST /api/v1/analyze-qr
 
-## Deploy app
+```json
+// Request
+{ "url": "http://bit.ly/login-verify" }
 
-`make deploy`
+// Response
+{
+  "risk": "HIGH",
+  "score": 95,
+  "url": "http://bit.ly/login-verify",
+  "reason": "The link does not use HTTPS. The QR code uses a shortened link. The link contains suspicious authentication words."
+}
+```
 
-## Running Tests
+## Requirements
 
-`make test`
+- Python 3.9+
+- [uv](https://github.com/astral-sh/uv)
 
-## Access Swagger Documentation
+## Environment variables
 
-> <http://localhost:8080/docs>
+Copy `.env.example` to `.env` and set:
 
-## Access Redocs Documentation
+| Variable | Description |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | Required for `/api/v1/analyze` |
+| `DEBUG` | Enable debug logging (default: `False`) |
+| `SECRET_KEY` | App secret |
 
-> <http://localhost:8080/redoc>
+## Setup & run
+
+```sh
+make install   # create venv and install dependencies
+make run       # start dev server at http://localhost:8080
+```
+
+## Docker
+
+```sh
+make deploy    # docker-compose build + up -d
+make down      # docker-compose down
+```
+
+## Docs
+
+- Swagger UI: http://localhost:8080/docs
+- ReDoc: http://localhost:8080/redoc
+
+## Tests
+
+```sh
+make test
+```
 
 ## Project structure
 
-Files related to application are in the `app` or `tests` directories.
-Application parts are:
-
-    app
-    |
-    | # Fast-API stuff
-    ├── api                 - web related stuff.
-    │   └── routes          - web routes.
-    ├── core                - application configuration, startup events, logging.
-    ├── models              - pydantic models for this application.
-    ├── services            - logic that is not just crud related.
-    ├── main-aws-lambda.py  - [Optional] FastAPI application for AWS Lambda creation and configuration.
-    └── main.py             - FastAPI application creation and configuration.
-    |
-    | # ML stuff
-    ├── data             - where you persist data locally
-    │   ├── interim      - intermediate data that has been transformed.
-    │   ├── processed    - the final, canonical data sets for modeling.
-    │   └── raw          - the original, immutable data dump.
-    │
-    ├── notebooks        - Jupyter notebooks. Naming convention is a number (for ordering),
-    |
-    ├── ml               - modelling source code for use in this project.
-    │   ├── __init__.py  - makes ml a Python module
-    │   ├── pipeline.py  - scripts to orchestrate the whole pipeline
-    │   │
-    │   ├── data         - scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features     - scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   └── model        - scripts to train models and make predictions
-    │       ├── predict_model.py
-    │       └── train_model.py
-    │
-    └── tests            - pytest
-
-## GCP
-
-Deploying inference service to Cloud Run
-
-### Authenticate
-
-1. Install `gcloud` cli
-2. `gcloud auth login`
-3. `gcloud config set project <PROJECT_ID>`
-
-### Enable APIs
-
-1. Cloud Run API
-2. Cloud Build API
-3. IAM API
-
-### Deploy to Cloud Run
-
-1. Run `gcp-deploy.sh`
-
-### Clean up
-
-1. Delete Cloud Run
-2. Delete Docker image in GCR
-
-## AWS
-
-Deploying inference service to AWS Lambda
-
-### Authenticate
-
-1. Install `awscli` and `sam-cli`
-2. `aws configure`
-
-### Deploy to Lambda
-
-1. Run `sam build`
-2. Run `sam deploy --guiChange this portion for other types of models
-
-## Add the correct type hinting when completed
-
-`aws cloudformation delete-stack --stack-name <STACK_NAME_ON_CREATION>`
-
-Made by <https://github.com/arthurhenrique/cookiecutter-fastapi/graphs/contributors> with ❤️
+```
+app/
+├── api/routes/       # FastAPI route handlers
+├── core/             # Config, logging
+├── models/           # Pydantic request/response models
+├── services/         # Business logic
+└── main.py           # App entrypoint
+```
